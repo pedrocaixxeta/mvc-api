@@ -29,8 +29,16 @@ class UsuarioDAO extends MysqlFactory {
             $sql = "INSERT INTO usuarios (nome, email, senha) VALUES (:nome, :email, :senha)";
             $param = [":nome" => $nome, ":email" => $email, ":senha" => $senha];
             $this->banco->executar($sql, $param);
+            return true; // Sucesso
         } catch (PDOException $e) {
-            return ["erro" => "Erro ao inserir: " . $e->getMessage()];
+            // --- AQUI ESTÁ A MÁGICA ---
+            // Se o código do erro for 23000, é duplicidade!
+            if ($e->getCode() == '23000') {
+                return ["erro" => "O e-mail '$email' já está cadastrado no sistema! Tente outro."];
+            }
+            
+            // Se for qualquer outro erro, mostra a mensagem técnica
+            return ["erro" => "Erro técnico ao inserir: " . $e->getMessage()];
         }
     }
 
@@ -41,6 +49,22 @@ class UsuarioDAO extends MysqlFactory {
             $param = [":nome"=>$nome, ":email"=>$email, ":id"=>$id];
             $this->banco->executar($sql, $param);
          } catch(PDOException $e) { return ["erro" => $e->getMessage()]; }
+    }
+
+    // Adicione este método novo para quando houver troca de senha
+    public function alterarComSenha($id, $nome, $email, $senha){
+        try {
+            $sql = "UPDATE usuarios SET nome = :nome, email = :email, senha = :senha WHERE id = :id";
+            $param = [
+                ":nome" => $nome,
+                ":email" => $email,
+                ":senha" => $senha,
+                ":id" => $id
+            ];
+            $this->banco->executar($sql, $param);
+        } catch (PDOException $e) {
+            return ["erro" => "Erro ao alterar com senha: " . $e->getMessage()];
+        }
     }
 
     public function excluir($id){

@@ -23,6 +23,21 @@ class Rotas
                 Acao::PUT => new Endpoint("api\\UsuarioController", "alterar", true),
                 Acao::DELETE => new Endpoint("api\\UsuarioController", "excluir", true)
             ]),
+
+            "genero" => new Acao([
+                Acao::GET => new Endpoint("api\\GeneroController", "listar", true),
+                Acao::POST => new Endpoint("api\\GeneroController", "inserir", true),
+                Acao::PUT => new Endpoint("api\\GeneroController", "alterar", true),
+                Acao::DELETE => new Endpoint("api\\GeneroController", "excluir", true)
+            ]),
+
+            // Recomendações
+            "recomendacao" => new Acao([
+                Acao::GET => new Endpoint("api\\RecomendacaoController", "listar", true),
+                Acao::POST => new Endpoint("api\\RecomendacaoController", "inserir", true),
+                Acao::PUT => new Endpoint("api\\RecomendacaoController", "alterar", true),
+                Acao::DELETE => new Endpoint("api\\RecomendacaoController", "excluir", true)
+            ]),
         ];
     }
 
