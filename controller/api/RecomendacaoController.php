@@ -5,80 +5,74 @@ use service\RecomendacaoService;
 
 class RecomendacaoController
 {
-    // GET /recomendacao (ou ?id=X)
     public function listar($id = null)
     {
         $service = new RecomendacaoService();
-        
         if ($id) {
-            $resultado = $service->listarId($id);
-            if (empty($resultado)) {
+            $res = $service->listarId($id);
+            if (empty($res)) {
                 http_response_code(404);
                 return ["erro" => "Recomendação não encontrada."];
             }
-            return $resultado;
+            return $res;
         }
-        
         return $service->listar();
     }
 
-    // POST /recomendacao (Cria nova recomendação)
     public function inserir($usuario_id, $genero_id, $livro_recomendado)
     {
-        // Validação de campos obrigatórios
         if(empty($usuario_id) || empty($genero_id) || empty($livro_recomendado)){
-            http_response_code(400);
-            return ["erro" => "Dados incompletos! O ID de usuário e gênero são obrigatórios."];
+            return ["erro" => "Dados incompletos!"];
         }
 
         $service = new RecomendacaoService();
-        $resultado = $service->inserir($usuario_id, $genero_id, $livro_recomendado);
+        $res = $service->inserir($usuario_id, $genero_id, $livro_recomendado);
         
-        // Checa erros do DAO (ex: Foreign Key violation)
-        if (isset($resultado['erro'])) {
+        if (isset($res['erro'])) {
              http_response_code(500);
-             return $resultado;
+             return $res;
         }
         http_response_code(201);
-        return ["mensagem" => "Recomendação criada com sucesso!"];
+        return ["mensagem" => "Recomendação criada!"];
     }
 
-    // PUT /recomendacao (Altera)
     public function alterar($id, $usuario_id, $genero_id, $livro_recomendado)
     {
+        if (empty($id)) {
+            http_response_code(400);
+            return ["erro" => "ID não informado para alteração."];
+        }
+
         $service = new RecomendacaoService();
-        $resultado = $service->alterar($id, $usuario_id, $genero_id, $livro_recomendado);
+
+        $existe = $service->listarId($id);
+
+        if (empty($existe)) {
+            http_response_code(404); // Not Found
+            return ["erro" => "Recomendação não encontrada para alteração."];
+        }
+
+        $res = $service->alterar($id, $usuario_id, $genero_id, $livro_recomendado);
         
-        // Checa erros do DAO (ex: Foreign Key violation)
-        if (isset($resultado['erro'])) {
+        if (isset($res['erro'])) {
              http_response_code(500);
-             return $resultado;
+             return $res;
         }
 
         return ["mensagem" => "Recomendação alterada com sucesso!"];
     }
 
-    // DELETE /recomendacao?id=1
     public function excluir($id)
     {
-        if (empty($id)) {
-            http_response_code(400);
-            return ["erro" => "ID não informado."];
-        }
+        if (empty($id)) return ["erro" => "ID obrigatório."];
 
         $service = new RecomendacaoService();
-
-        // Busca a recomendação (checa existência)
-        $recomendacaoExiste = $service->listarId($id);
-
-        if (empty($recomendacaoExiste)) {
+        if (empty($service->listarId($id))) {
             http_response_code(404);
-            return ["erro" => "Não foi possível excluir. A recomendação com ID $id não existe."];
+            return ["erro" => "Recomendação não existe."];
         }
         
-        // Tenta excluir
         $service->excluir($id);
-        
-        return ["mensagem" => "Recomendação excluída com sucesso!"];
+        return ["mensagem" => "Recomendação excluída!"];
     }
 }

@@ -19,65 +19,29 @@ class Acao
 
     public function executar()
     {
-        $end = $this->endpointMetodo();
+        $end = $this->endpoint[$_SERVER["REQUEST_METHOD"]] ?? null;
         
         if ($end) {
-            // 1. JWT Middleware: Verifica se a rota precisa de Token
+            // Verifica Token JWT se necessário
             if($end->autenticar){
                 $jwt = new JWTAuth();
-                $decode = $jwt->verificar();
-                if(!$decode) {
-                    return ["erro" => "Acesso não autorizado"];
-                }
+                if(!$jwt->verificar()) return ["erro" => "Acesso não autorizado"];
             }
 
-            // 2. Reflection: Prepara a injeção de parâmetros
-            $reflectMetodo = new ReflectionMethod($end->classe, $end->execucao);
-            $parametros = $reflectMetodo->getParameters();
-            $returnParam = $this->getParam(); // Coleta dados do JSON, POST e GET
-            $para = [];
+            // Injeção de dependência via Reflection
+            $reflect = new ReflectionMethod($end->classe, $end->execucao);
+            $params = $reflect->getParameters();
+            $data = array_merge($_POST, $_GET, json_decode(file_get_contents("php://input"), true) ?? []);
+            
+            if(isset($data['param'])) unset($data['param']); // Limpa rota do GET
 
-            // 3. Injeta parâmetros por nome (automaticamente)
-            foreach ($parametros as $v) {
-                $name = $v->getName();
-                $para[$name] = $returnParam[$name] ?? null; // Null coalescing para null se não existir
+            $args = [];
+            foreach ($params as $v) {
+                $args[$v->getName()] = $data[$v->getName()] ?? null;
             }
 
-            // 4. Executa o método do Controller com os argumentos injetados
-            return $reflectMetodo->invokeArgs(new $end->classe(), $para);
+            return $reflect->invokeArgs(new $end->classe(), $args);
         }
         return null;
-    }
-
-    private function endpointMetodo()
-    {
-        // Mapeia o verbo HTTP (GET/POST/PUT/DELETE) para o Endpoint configurado
-        return $this->endpoint[$_SERVER["REQUEST_METHOD"]] ?? null;
-    }
-
-    private function getPost(){
-        return $_POST ?? [];
-    }
-
-    private function getGet(){
-        if($_GET) {
-            $get = $_GET;
-            unset($get["param"]); // Remove o parametro de rota
-            return $get;
-        }
-        return [];
-    }
-
-    private function getInput(){
-        $input = file_get_contents("php://input");
-        if($input){
-            return json_decode($input, true); // Retorna array do JSON Body
-        }
-        return [];
-    }
-
-    public function getParam(){
-        // Junta todos os dados recebidos (JSON, GET, POST)
-        return array_merge($this->getPost(), $this->getGet(), $this->getInput());
     }
 }

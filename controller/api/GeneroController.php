@@ -5,84 +5,60 @@ use service\GeneroService;
 
 class GeneroController
 {
-    // GET /genero (ou ?id=X)
     public function listar($id = null)
     {
         $service = new GeneroService();
-        
         if ($id) {
-            $resultado = $service->listarId($id);
-            if (empty($resultado)) {
-                http_response_code(404); // Not Found
+            $res = $service->listarId($id);
+            if (empty($res)) {
+                http_response_code(404);
                 return ["erro" => "Gênero não encontrado."];
             }
-            return $resultado;
+            return $res;
         }
-        
-        return $service->listar(); // Lista todos
+        return $service->listar();
     }
 
-    // POST /genero
     public function inserir($nome)
     {
-        // Validação de campo obrigatório
-        if (empty($nome)) {
-            http_response_code(400); // Bad Request
-            return ["erro" => "O nome do gênero é obrigatório."];
-        }
+        if (empty($nome)) return ["erro" => "Nome obrigatório."];
         
         $service = new GeneroService();
-        $resultado = $service->inserir($nome);
+        $res = $service->inserir($nome);
         
-        // Checa se o DAO retornou erro (ex: duplicidade)
-        if (isset($resultado['erro'])) {
+        if (isset($res['erro'])) {
              http_response_code(500);
-             return $resultado;
+             return $res;
         }
-
-        return ["mensagem" => "Gênero criado com sucesso!"];
+        return ["mensagem" => "Gênero criado!"];
     }
 
-    // PUT /genero (Altera)
     public function alterar($id, $nome)
     {
         $service = new GeneroService();
-        $resultado = $service->alterar($id, $nome);
-        
-        if (isset($resultado['erro'])) {
+        $res = $service->alterar($id, $nome);
+        if (isset($res['erro'])) {
              http_response_code(500);
-             return $resultado;
+             return $res;
         }
-
-        return ["mensagem" => "Gênero alterado com sucesso!"];
+        return ["mensagem" => "Gênero alterado!"];
     }
 
-    // DELETE /genero?id=1
     public function excluir($id)
     {
-        if (empty($id)) {
-            http_response_code(400);
-            return ["erro" => "ID não informado para exclusão."];
-        }
+        if (empty($id)) return ["erro" => "ID obrigatório."];
 
         $service = new GeneroService();
-        
-        // Busca se existe para retornar 404
-        $generoExiste = $service->listarId($id);
-
-        if (empty($generoExiste)) {
+        if (empty($service->listarId($id))) {
             http_response_code(404);
-            return ["erro" => "Não foi possível excluir. O gênero com ID $id não existe."];
+            return ["erro" => "Gênero não existe."];
         }
 
-        // Tenta excluir e verifica erro de chave estrangeira no DAO
-        $resultado = $service->excluir($id);
-
-        if (isset($resultado['erro'])) {
+        $res = $service->excluir($id);
+        if (isset($res['erro'])) {
              http_response_code(500);
-             return $resultado; // Retorna erro do DAO (ex: "tem livros vinculados")
+             return $res;
         }
-        
-        return ["mensagem" => "Gênero excluído com sucesso!"];
+        return ["mensagem" => "Gênero excluído!"];
     }
 }
