@@ -22,7 +22,7 @@ class Acao
         $end = $this->endpointMetodo();
         
         if ($end) {
-            // 1. Verifica Token se necessário
+            // 1. JWT Middleware: Verifica se a rota precisa de Token
             if($end->autenticar){
                 $jwt = new JWTAuth();
                 $decode = $jwt->verificar();
@@ -31,21 +31,19 @@ class Acao
                 }
             }
 
-            // 2. Injeção de Dependência automática (Reflection)
+            // 2. Reflection: Prepara a injeção de parâmetros
             $reflectMetodo = new ReflectionMethod($end->classe, $end->execucao);
             $parametros = $reflectMetodo->getParameters();
-            $returnParam = $this->getParam();
+            $returnParam = $this->getParam(); // Coleta dados do JSON, POST e GET
             $para = [];
 
+            // 3. Injeta parâmetros por nome (automaticamente)
             foreach ($parametros as $v) {
                 $name = $v->getName();
-                if(isset($returnParam[$name])){
-                    $para[$name] = $returnParam[$name];
-                } else {
-                    $para[$name] = null; 
-                }
+                $para[$name] = $returnParam[$name] ?? null; // Null coalescing para null se não existir
             }
 
+            // 4. Executa o método do Controller com os argumentos injetados
             return $reflectMetodo->invokeArgs(new $end->classe(), $para);
         }
         return null;
@@ -53,18 +51,18 @@ class Acao
 
     private function endpointMetodo()
     {
-        return isset($this->endpoint[$_SERVER["REQUEST_METHOD"]]) ? $this->endpoint[$_SERVER["REQUEST_METHOD"]] : null;
+        // Mapeia o verbo HTTP (GET/POST/PUT/DELETE) para o Endpoint configurado
+        return $this->endpoint[$_SERVER["REQUEST_METHOD"]] ?? null;
     }
 
     private function getPost(){
-        if($_POST) return $_POST;
-        return [];
+        return $_POST ?? [];
     }
 
     private function getGet(){
         if($_GET) {
             $get = $_GET;
-            unset($get["param"]);
+            unset($get["param"]); // Remove o parametro de rota
             return $get;
         }
         return [];
@@ -73,12 +71,13 @@ class Acao
     private function getInput(){
         $input = file_get_contents("php://input");
         if($input){
-            return json_decode($input, true);
+            return json_decode($input, true); // Retorna array do JSON Body
         }
         return [];
     }
 
     public function getParam(){
+        // Junta todos os dados recebidos (JSON, GET, POST)
         return array_merge($this->getPost(), $this->getGet(), $this->getInput());
     }
 }

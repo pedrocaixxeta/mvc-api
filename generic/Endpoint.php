@@ -9,8 +9,7 @@ class Endpoint
 
     public function __construct($classe, $execucao, $autenticar = false)
     {
-        // O professor concatena o namespace controller aqui
-        $this->classe = "controller\\" . $classe;
+        $this->classe = "controller\\" . $classe; // Concatena namespace
         $this->execucao = $execucao;
         $this->autenticar = $autenticar;
     }

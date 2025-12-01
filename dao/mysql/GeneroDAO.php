@@ -10,7 +10,7 @@ class GeneroDAO extends MysqlFactory {
         try {
             $sql = "SELECT * FROM generos";
             return $this->banco->executar($sql);
-        } catch (PDOException $e) {
+        } catch (PDOException $e) { /* Trata erro de conexão ou SQL */
             return ["erro" => "Erro ao listar gêneros: " . $e->getMessage()];
         }
     }
@@ -20,25 +20,22 @@ class GeneroDAO extends MysqlFactory {
             $sql = "SELECT * FROM generos WHERE id = :id";
             $param = [":id" => $id];
             return $this->banco->executar($sql, $param);
-        } catch (PDOException $e) {
+        } catch (PDOException $e) { /* Trata erro de conexão ou SQL */
             return ["erro" => "Erro ao buscar gênero: " . $e->getMessage()];
         }
     }
 
     public function inserir($nome){
-        // ATENÇÃO: O try começa AQUI
         try {
             $sql = "INSERT INTO generos (nome) VALUES (:nome)";
             $param = [":nome" => $nome];
             $this->banco->executar($sql, $param);
         } catch (PDOException $e) {
-            // Tratamento de duplicidade
             if ($e->getCode() == '23000') {
-                return ["erro" => "Já existe um gênero cadastrado com esse nome!"];
+                return ["erro" => "Já existe um gênero cadastrado com esse nome!"]; // Duplicidade
             }
             return ["erro" => "Erro técnico ao inserir: " . $e->getMessage()];
         }
-        // A função termina AQUI
     }
 
     public function alterar($id, $nome){
@@ -48,7 +45,7 @@ class GeneroDAO extends MysqlFactory {
             $this->banco->executar($sql, $param);
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
-                return ["erro" => "Já existe um gênero cadastrado com esse nome!"];
+                return ["erro" => "Já existe um gênero cadastrado com esse nome!"]; // Duplicidade
             }
             return ["erro" => "Erro técnico ao alterar: " . $e->getMessage()];
         }
@@ -60,7 +57,7 @@ class GeneroDAO extends MysqlFactory {
             $param = [":id" => $id];
             $this->banco->executar($sql, $param);
         } catch (PDOException $e) {
-            // Erro de chave estrangeira (tentar apagar gênero que tem livros)
+            // Trata erro de chave estrangeira (se tentar apagar gênero vinculado a livro)
             if ($e->getCode() == '23000') {
                 return ["erro" => "Não é possível excluir este gênero pois existem livros vinculados a ele."];
             }

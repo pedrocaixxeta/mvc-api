@@ -4,5 +4,5 @@ namespace service;
 use dao\mysql\GeneroDAO;
 
 class GeneroService extends GeneroDAO{
-    // Apenas herda os métodos do DAO
+    // Herda todos os métodos do GeneroDAO.
 }

@@ -6,17 +6,17 @@ use generic\JWTAuth;
 
 class LoginController
 {
-    // A classe Acao injeta $email e $senha automaticamente do JSON
+    // Método chamado na rota POST /login
     public function logar($email, $senha)
     {
         $service = new UsuarioService();
         
-        // Tenta achar o usuário e validar senha
+        // Autentica o usuário (verifica hash)
         $usuario = $service->autenticar($email, $senha);
 
         if ($usuario) {
-            // Se deu certo, cria o Token JWT
             $jwt = new JWTAuth();
+            // Gera o Token com o ID do usuário
             $token = $jwt->criarChave($usuario['id']);
 
             return ["token" => $token, "usuario" => $usuario['nome']];
