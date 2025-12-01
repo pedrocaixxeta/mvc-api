@@ -19,36 +19,59 @@ class RecomendacaoController
         return $service->listar();
     }
 
+    // POST /recomendacao
     public function inserir($usuario_id, $genero_id, $livro_recomendado)
     {
+        // 1. Validação de Vazio
         if(empty($usuario_id) || empty($genero_id) || empty($livro_recomendado)){
-            return ["erro" => "Dados incompletos!"];
+            http_response_code(400);
+            return ["erro" => "Dados incompletos! Informe usuario_id, genero_id e livro_recomendado."];
+        }
+
+        // 2. Validação de Tipo (IDs devem ser números)
+        if (!is_numeric($usuario_id) || !is_numeric($genero_id)) {
+            http_response_code(400);
+            return ["erro" => "Os IDs de usuário e gênero devem ser numéricos."];
+        }
+
+        // 3. Validação de Tamanho (Máximo 150 caracteres)
+        if (strlen($livro_recomendado) > 150) {
+            http_response_code(400);
+            return ["erro" => "O nome do livro é muito longo (máximo 150 caracteres)."];
         }
 
         $service = new RecomendacaoService();
-        $res = $service->inserir($usuario_id, $genero_id, $livro_recomendado);
+        $resultado = $service->inserir($usuario_id, $genero_id, $livro_recomendado);
         
-        if (isset($res['erro'])) {
+        if (isset($resultado['erro'])) {
              http_response_code(500);
-             return $res;
+             return $resultado;
         }
+        
         http_response_code(201);
-        return ["mensagem" => "Recomendação criada!"];
+        return ["mensagem" => "Recomendação criada com sucesso!"];
     }
 
+    // PUT /recomendacao
     public function alterar($id, $usuario_id, $genero_id, $livro_recomendado)
     {
-        if (empty($id)) {
+        // 1. Validação de Vazio (Essa estava faltando!)
+        if (empty($id) || empty($usuario_id) || empty($genero_id) || empty($livro_recomendado)) {
             http_response_code(400);
-            return ["erro" => "ID não informado para alteração."];
+            return ["erro" => "Dados incompletos para alteração! Envie todos os campos."];
+        }
+
+        // 2. Validação de Tamanho
+        if (strlen($livro_recomendado) > 150) {
+            http_response_code(400);
+            return ["erro" => "O nome do livro é muito longo (máximo 150 caracteres)."];
         }
 
         $service = new RecomendacaoService();
 
-        $existe = $service->listarId($id);
-
-        if (empty($existe)) {
-            http_response_code(404); // Not Found
+        // 3. Verifica se existe antes de alterar (Evita sucesso falso)
+        if (empty($service->listarId($id))) {
+            http_response_code(404);
             return ["erro" => "Recomendação não encontrada para alteração."];
         }
 
